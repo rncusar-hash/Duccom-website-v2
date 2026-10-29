@@ -1,0 +1,89 @@
+name: Import website release ZIP
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'GitHub release tag containing website-update.zip'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: true
+      - name: Download uploaded release ZIP
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          gh release download "$RELEASE_TAG" --pattern 'website-update.zip' --output "$RUNNER_TEMP/website-update.zip"
+      - name: Extract safe project files
+        env:
+          ZIP_PATH: ${{ runner.temp }}/website-update.zip
+        run: |
+          python3 - <<'PY'
+          import os, pathlib, shutil, zipfile
+          source = pathlib.Path(os.environ['ZIP_PATH'])
+          root = pathlib.Path.cwd().resolve()
+          protected = ('.git/', '.github/', 'node_modules/', '.env', '.env.', 'package-lock.json')
+          with zipfile.ZipFile(source) as z:
+              files = [i for i in z.infolist() if not i.is_dir()]
+              if len(files) > 500: raise SystemExit('Too many files')
+              total = sum(i.file_size for i in files)
+              if total > 30 * 1024 * 1024: raise SystemExit('Uncompressed archive too large')
+              for info in files:
+                  name = info.filename.replace('\\', '/')
+                  p = pathlib.PurePosixPath(name)
+                  if p.is_absolute() or '..' in p.parts or not name or name.startswith('/'):
+                      raise SystemExit(f'Unsafe path: {name}')
+                  if name.startswith(protected) or name in ('.env', 'package-lock.json'):
+                      raise SystemExit(f'Protected path: {name}')
+                  if (info.external_attr >> 16) & 0o170000 == 0o120000:
+                      raise SystemExit(f'Symlink not allowed: {name}')
+                  target = (root / name).resolve()
+                  if not target.is_relative_to(root): raise SystemExit(f'Unsafe target: {name}')
+              for info in files:
+                  target = root / info.filename
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  with z.open(info) as src, target.open('wb') as dst: shutil.copyfileobj(src, dst)
+          print(f'Imported {len(files)} files')
+          PY
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install and validate
+        run: |
+          npm install --no-audit --no-fund
+          npm run lint
+          npm run format:check
+          npm test
+      - name: Create update pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git checkout -b "website-update-${GITHUB_RUN_ID}"
+          git add -A
+          if git diff --cached --quiet; then
+            echo 'No changes to import'
+            exit 0
+          fi
+          git commit -m "chore: import website update ${RELEASE_TAG}"
+          git push -u origin HEAD
+          gh pr create --base main --head "website-update-${GITHUB_RUN_ID}" \
+            --title "Website update: ${RELEASE_TAG}" \
+            --body "Automated import from release ${RELEASE_TAG}. Validation completed successfully. Review before merging to deploy on Render."
