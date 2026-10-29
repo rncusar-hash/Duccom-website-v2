@@ -23,16 +23,16 @@ npm run format:check
 npm test
 ```
 
-## Pterodactyl deployment
+## Render deployment
 
-1. Choose a **Node.js 22+ egg** that supports a persistent Node process. Verify that the host permits your allocated web port and provides an HTTP reverse proxy with HTTPS for a public domain.
-2. Upload the project files to the server (excluding `node_modules` and `.env`).
-3. Set the startup command to `npm start`. Install dependencies with `npm install --omit=dev` (or use the egg's install mechanism).
-4. Configure `NODE_ENV=production`, `HOST=0.0.0.0`, and `PORT` to the **port assigned by your hosting provider**. Do not assume port 3000 is externally available.
-5. Start the server, visit `/health`, then check `/`, `/about`, and an unknown URL (should return 404).
-6. For each release, retain a copy of the previous deployed build. Stop the server, upload the validated new release, install dependencies if needed, restart, and verify `/health`. Roll back to the saved build if checks fail.
+1. Upload these files to `rncusar-hash/Duccom-website-v2` on GitHub.
+2. On Render, select **New > Blueprint** and connect the GitHub repository. The included `render.yaml` defines a Node web service, `npm install --no-audit --no-fund` build, `npm start` startup, and `/health` check. Alternatively create a Web Service with these same commands.
+3. Choose the service plan that meets your needs. The blueprint currently requests the free plan; Render may require a different plan depending on account and availability.
+4. Render sets `PORT` automatically. The Express server listens on `0.0.0.0` by default. Do not set a fixed `PORT` unless Render instructs you to.
+5. Verify `/health` returns `{"status":"ok"}`, `/` renders, and an unknown URL returns HTTP 404.
+6. For incremental releases, merge tested changes into `main`; monitor deploy logs and health checks. If deployment fails, redeploy the last known-good commit through Render.
 
-**Do not configure real public submissions or credentials in Phase 1.1.** Production authentication, databases, request validation, CSRF controls, sessions, privacy policies, and accessibility reviews will be added and verified before those features are enabled.
+**Note:** Free Render instances may spin down when idle. No database or credentials are required in this phase. Never commit secrets, and do not activate real intake forms or authentication until their security controls are implemented.
 
 ## GitHub upload (if connector write access is blocked)
 
@@ -51,4 +51,4 @@ If the repository already contains commits, clone it first and copy these files 
 
 ## Next milestone
 
-Phase 1.2: match the homepage layout and visual system to user-provided UI reference screenshots, without copying them exactly.
+Phase 1.2: Render deployment readiness complete; next, match the homepage layout and visual system to user-provided UI reference screenshots, without copying them exactly.
