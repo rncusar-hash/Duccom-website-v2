@@ -1,54 +1,40 @@
-# DUCCOM Website V2 | Unofficial Demonstration
+# DUCCOM Website V2 · Phase 1.3
 
-An independent, government-style demonstration portal. **Not affiliated with DuPage County, DU-COMM, or any emergency dispatch agency.** Do not use this site to report emergencies or submit personal information.
+Unofficial demonstration website. **Not affiliated with DuPage County or DU-COMM. Do not submit emergencies or personal data.**
 
-## Phase 1.1: Foundation
+## What's new
 
-Included: Express 5, EJS views, responsive demonstration homepage, navigation, planned-section placeholders, security headers, health endpoint, smoke tests, ESLint, Prettier and GitHub Actions. **Not included:** actual login, database, forms, records, or admin functionality. Links to these areas show placeholders only.
+- Responsive homepage: agency header, navigation, dispatch-themed hero, about, quick links, careers, red notices, Smart911, and footer.
+- Accessible mobile navigation toggle, Escape dismissal, and skip link.
+- The 988 and Crisis Recovery Center promotional sections were excluded as requested.
+- The anniversary logo was **cropped from the user-provided reference screenshot**, not a production-quality logo asset. Replace `public/duccomm-reference-logo.png` with a clean authorized original when available. The screenshot includes the anniversary design.
+- Illustrative CSS dispatch-room artwork, not a photograph of an actual facility. Swap in a licensed photo when supplied.
+- Public-facing links for not-yet-built sections lead to clearly marked placeholders. No forms or authentication are live.
 
-## Run locally
+## Local setup
 
-Requires Node.js 22 or newer.
+Requires Node.js 22+.
 
 ```bash
 npm install
+npm test
+npm run lint
+npm run format:check
 npm start
 ```
 
-Open http://localhost:3000. Check http://localhost:3000/health for `{"status":"ok"}`.
+Visit http://localhost:3000 and http://localhost:3000/health.
 
-```bash
-npm run lint
-npm run format:check
-npm test
-```
+## Render
 
-## Render deployment
+Existing `render.yaml` remains compatible. Upload/commit the **contents** of this archive to the repository root, preserving the `src`, `public`, and `.github` folders. Render will redeploy automatically if connected with auto-deploy. If using manual deploy, choose **Deploy latest commit**. Health check: `/health`.
 
-1. Upload these files to `rncusar-hash/Duccom-website-v2` on GitHub.
-2. On Render, select **New > Blueprint** and connect the GitHub repository. The included `render.yaml` defines a Node web service, `npm install --no-audit --no-fund` build, `npm start` startup, and `/health` check. Alternatively create a Web Service with these same commands.
-3. Choose the service plan that meets your needs. The blueprint currently requests the free plan; Render may require a different plan depending on account and availability.
-4. Render sets `PORT` automatically. The Express server listens on `0.0.0.0` by default. Do not set a fixed `PORT` unless Render instructs you to.
-5. Verify `/health` returns `{"status":"ok"}`, `/` renders, and an unknown URL returns HTTP 404.
-6. For incremental releases, merge tested changes into `main`; monitor deploy logs and health checks. If deployment fails, redeploy the last known-good commit through Render.
+No secrets or MongoDB are needed for this phase. If the build uses `npm ci`, generate and commit a package-lock.json using `npm install` first; the included Render Blueprint uses `npm install`.
 
-**Note:** Free Render instances may spin down when idle. No database or credentials are required in this phase. Never commit secrets, and do not activate real intake forms or authentication until their security controls are implemented.
+## Rollback
 
-## GitHub upload (if connector write access is blocked)
+Use Render dashboard → Deploys → select a previously successful deploy → Redeploy, or revert the homepage commit in GitHub.
 
-Create a local directory from the extracted archive, then run:
+## Next checkpoint
 
-```bash
-git init
-git branch -M main
-git add .
-git commit -m "feat: initialize DUCCOM website foundation"
-git remote add origin https://github.com/rncusar-hash/Duccom-website-v2.git
-git push -u origin main
-```
-
-If the repository already contains commits, clone it first and copy these files into the clone rather than force-pushing. Authenticate using GitHub's supported Git credential flow; do not put a token in the remote URL or commit credentials.
-
-## Next milestone
-
-Phase 1.2: Render deployment readiness complete; next, match the homepage layout and visual system to user-provided UI reference screenshots, without copying them exactly.
+Review live desktop/mobile screenshots, supply a high-quality DUCCOM logo and dispatch facility photograph if available, and approve homepage content before implementing real page workflows.
